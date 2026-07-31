@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ledger — Grade Calculator</title>
+<meta name="description" content="A modern grade calculator with GPA tracking, statistics, and export tools." />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+<!-- PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===== Skip link for keyboard users ===== -->
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<!-- ===== Background ambience ===== -->
+<div class="bg-glow bg-glow--one" aria-hidden="true"></div>
+<div class="bg-glow bg-glow--two" aria-hidden="true"></div>
+<canvas id="confettiCanvas" aria-hidden="true"></canvas>
+
+<!-- ===== Header ===== -->
+<header class="app-header">
+  <div class="app-header__brand">
+    <span class="app-header__mark" aria-hidden="true"><i class="fa-solid fa-feather-pointed"></i></span>
+    <div>
+      <p class="eyebrow">Academic Ledger</p>
+      <h1 class="app-header__title">Grade Calculator</h1>
+    </div>
+  </div>
+
+  <div class="app-header__meta">
+    <time id="liveDateTime" class="live-clock" datetime="">—</time>
+    <button id="themeToggle" class="icon-toggle" type="button" aria-pressed="false" aria-label="Switch to light mode">
+      <i class="fa-solid fa-moon" aria-hidden="true"></i>
+      <i class="fa-solid fa-sun" aria-hidden="true"></i>
+    </button>
+  </div>
+</header>
+
+<main id="main" class="layout">
+
+  <!-- ===== LEFT COLUMN — INPUT ===== -->
+  <section class="panel panel--input" aria-labelledby="studentInfoHeading">
+
+    <div class="glass-card">
+      <h2 id="studentInfoHeading" class="card-title">
+        <i class="fa-solid fa-user-graduate" aria-hidden="true"></i> Student Information
+      </h2>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="studentName">Student name</label>
+          <input type="text" id="studentName" name="studentName" placeholder="e.g. Yeabsira Tesfaye" autocomplete="name" required aria-required="true">
+        </div>
+        <div class="field">
+          <label for="studentId">Student ID <span class="field-optional">(optional)</span></label>
+          <input type="text" id="studentId" name="studentId" placeholder="e.g. 3337/17" autocomplete="off">
+        </div>
+      </div>
+      <p class="field-error" id="studentNameError" role="alert" aria-live="polite"></p>
+    </div>
+
+    <div class="glass-card">
+      <div class="card-title-row">
+        <h2 class="card-title">
+          <i class="fa-solid fa-book-open" aria-hidden="true"></i> Subjects
+        </h2>
+        <span class="pill" id="subjectCountPill">0 subjects</span>
+      </div>
+
+      <ul id="subjectList" class="subject-list" aria-label="Subject list"></ul>
+
+      <button type="button" id="addSubjectBtn" class="btn btn--dashed">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Add subject
+      </button>
+    </div>
+
+    <div class="action-row">
+      <button type="button" id="calculateBtn" class="btn btn--primary">
+        <span class="btn__label"><i class="fa-solid fa-calculator" aria-hidden="true"></i> Calculate grades</span>
+        <span class="btn__spinner" aria-hidden="true"></span>
+      </button>
+      <button type="button" id="resetBtn" class="btn btn--ghost-danger">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset
+      </button>
+    </div>
+  </section>
+
+  <!-- ===== RIGHT COLUMN — DASHBOARD ===== -->
+  <section class="panel panel--dashboard" aria-labelledby="dashboardHeading" id="reportArea">
+
+    <div class="glass-card dashboard-hero">
+      <div class="hero-left">
+        <p class="eyebrow" id="dashboardHeading">Report card</p>
+        <h2 class="hero-name" id="heroStudentName">Your report</h2>
+        <p class="hero-sub" id="heroStudentId"></p>
+
+        <div class="performance-badge" id="performanceBadge" data-level="none">
+          <i class="fa-solid fa-seedling" aria-hidden="true"></i>
+          <span>Add subjects to begin</span>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="progress-ring" role="img" aria-label="Average score progress ring">
+          <svg viewBox="0 0 160 160" width="160" height="160">
+            <defs>
+              <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366f1"></stop>
+                <stop offset="100%" stop-color="#f5b942"></stop>
+              </linearGradient>
+            </defs>
+            <circle class="ring-track" cx="80" cy="80" r="68"></circle>
+            <circle class="ring-value" id="ringValue" cx="80" cy="80" r="68"></circle>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-number" id="ringPercent">0%</span>
+            <span class="ring-label">Average</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+        <span class="stat-value" data-counter data-target="0" id="statSubjects">0</span>
+        <span class="stat-label">Subjects</span>
+      </div>
+      <div class="stat-card">
+        <i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i>
+        <span class="stat-value" data-counter data-target="0" id="statHighest">0</span>
+        <span class="stat-label">Highest</span>
+      </div>
+      <div class="stat-card">
+        <i class="fa-solid fa-arrow-trend-down" aria-hidden="true"></i>
+        <span class="stat-value" data-counter data-target="0" id="statLowest">0</span>
+        <span class="stat-label">Lowest</span>
+      </div>
+      <div class="stat-card">
+        <i class="fa-solid fa-percent" aria-hidden="true"></i>
+        <span class="stat-value" data-counter data-target="0" id="statAverage">0</span>
+        <span class="stat-label">Average</span>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <i class="fa-solid fa-star" aria-hidden="true"></i>
+        <span class="stat-value" id="statGpa">0.0</span>
+        <span class="stat-label">GPA (4.0)</span>
+      </div>
+      <div class="stat-card stat-card--accent">
+        <i class="fa-solid fa-award" aria-hidden="true"></i>
+        <span class="stat-value" id="statGrade">—</span>
+        <span class="stat-label">Final grade</span>
+      </div>
+    </div>
+
+    <div class="glass-card">
+      <h2 class="card-title"><i class="fa-solid fa-chart-column" aria-hidden="true"></i> Score breakdown</h2>
+      <div class="chart-wrap">
+        <canvas id="scoreChart" role="img" aria-label="Bar chart of subject scores"></canvas>
+      </div>
+    </div>
+
+    <div class="glass-card export-card">
+      <h2 class="card-title"><i class="fa-solid fa-file-export" aria-hidden="true"></i> Export report</h2>
+      <div class="export-row">
+        <button type="button" id="printBtn" class="btn btn--soft"><i class="fa-solid fa-print" aria-hidden="true"></i> Print</button>
+        <button type="button" id="pdfBtn" class="btn btn--soft"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download PDF</button>
+        <button type="button" id="csvBtn" class="btn btn--soft"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Export CSV</button>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- ===== Floating action button ===== -->
+<button type="button" id="fabAdd" class="fab" aria-label="Add a new subject">
+  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+</button>
+
+<!-- ===== Toast region ===== -->
+<div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ===== Subject row template ===== -->
+<template id="subjectRowTemplate">
+  <li class="subject-row" data-row>
+    <div class="subject-row__grip" aria-hidden="true"><i class="fa-solid fa-grip-lines"></i></div>
+    <div class="field field--grow">
+      <label class="visually-hidden">Subject name</label>
+      <input type="text" class="subject-name" placeholder="Subject name" required aria-required="true">
+    </div>
+    <div class="field field--score">
+      <label class="visually-hidden">Score</label>
+      <input type="number" class="subject-score" placeholder="0–100" min="0" max="100" step="1" inputmode="numeric" required aria-required="true">
+    </div>
+    <button type="button" class="row-remove" aria-label="Remove subject">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+    <p class="field-error row-error" role="alert" aria-live="polite"></p>
+  </li>
+</template>
+
+<script src="app.js"></script>
+</body>
+</html>
